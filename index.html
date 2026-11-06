@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CHESSVERSE AI - Ultimate Chess Ecosystem</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0fdf4',
+                            500: '#22c55e',
+                            600: '#16a34a',
+                            700: '#15803d',
+                            900: '#14532d',
+                        },
+                        dark: {
+                            800: '#1e293b',
+                            900: '#0f172a',
+                            950: '#020617'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- React & ReactDOM CDN -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <!-- Babel for JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Chess.js for Rules & Move Validation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
+    <!-- Tailwind Custom Styles -->
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        .glass-panel { background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.1); }
+        .light .glass-panel { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(16px); border: 1px solid rgba(0, 0, 0, 0.1); }
+    </style>
+</head>
+<body class="bg-dark-950 text-slate-100 min-h-screen selection:bg-emerald-500 selection:text-white">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef, useMemo } = React;
+
+        function ChessverseApp() {
+            const [activeTab, setActiveTab] = useState('home');
+            const [theme, setTheme] = useState('dark');
+            const [user, setUser] = useState({ name: 'Grandmaster Bijay', rating: 2145, title: 'IM', xp: 8450, level: 24, streak: 14, premium: true });
+            
+            // Toggle Theme
+            useEffect(() => {
+                if (theme === 'dark') {
+                    document.documentElement.classList.add('dark');
+                } else {
+                    document.documentElement.classList.remove('dark');
+                }
+            }, [theme]);
+
+            return (
+                <div className="flex h-screen overflow-hidden bg-slate-950 text-slate-100">
+                    {/* Sidebar Navigation */}
+                    <aside className="w-64 glass-panel border-r border-slate-800 flex flex-col justify-between hidden md:flex">
+                        <div className="p-6">
+                            <div className="flex items-center space-x-3 mb-8">
+                                <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center shadow-lg shadow-emerald-500/30">
+                                    <i data-lucide="crown" className="w-6 h-6 text-slate-950"></i>
+                                </div>
+                                <div>
+                                    <h1 className="font-extrabold text-lg tracking-wider bg-gradient-to-r from-emerald-400 to-teal-200 bg-clip-text text-transparent">CHESSVERSE</h1>
+                                    <p className="text-xs text-slate-400 font-medium">AI ECOSYSTEM v3.5</p>
+                                </div>
+                            </div>
+
+                            <nav className="space-y-1.5">
+                                {[
+                                    { id: 'home', label: 'Home Dashboard', icon: 'home' },
+                                    { id: 'play', label: 'Play Chess', icon: 'play-circle' },
+                                    { id: 'puzzles', label: 'Chess Puzzles', icon: 'puzzle' },
+                                    { id: 'analysis', label: 'Analysis Lab', icon: 'cpu' },
+                                    { id: 'learn', label: 'Chess Academy', icon: 'graduation-cap' },
+                                    { id: 'tournaments', label: 'Tournaments', icon: 'trophy' },
+                                    { id: 'leaderboards', label: 'Leaderboards', icon: 'award' },
+                                    { id: 'friends', label: 'Friends & Social', icon: 'users' },
+                                    { id: 'profile', label: 'Player Profile', icon: 'user' },
+                                    { id: 'admin', label: 'Admin Console', icon: 'shield-alert' },
+                                    { id: 'settings', label: 'Settings', icon: 'settings' }
+                                ].map(item => (
+                                    <button
+                                        key={item.id}
+                                        onClick={() => setActiveTab(item.id)}
+                                        className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl font-medium transition-all ${activeTab === item.id ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shadow-sm' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'}`}
+                                    >
+                                        <i data-lucide={item.icon} className="w-5 h-5"></i>
+                                        <span className="text-sm">{item.label}</span>
+                                    </button>
+                                ))}
+                            </nav>
+                        </div>
+
+                        {/* User Footer */}
+                        <div className="p-4 border-t border-slate-800 bg-slate-900/40">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center space-x-3">
+                                    <div className="w-10 h-10 rounded-full bg-gradient-to-r from-purple-500 to-indigo-500 flex items-center justify-center font-bold text-white shadow">
+                                        {user.name.charAt(0)}
+                                    </div>
+                                    <div>
+                                        <h4 className="text-sm font-bold text-slate-200">{user.name}</h4>
+                                        <p className="text-xs text-emerald-400 font-semibold">{user.title} • {user.rating} ELO</p>
+                                    </div>
+                                </div>
+                                <button onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} className="p-2 rounded-lg bg-slate-800 text-slate-300 hover:text-white">
+                                    <i data-lucide={theme === 'dark' ? 'sun' : 'moon'} className="w-4 h-4"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </aside>
+
+                    {/* Main Content Area */}
+                    <main className="flex-1 flex flex-col h-screen overflow-y-auto bg-slate-950">
+                        {/* Top Header Bar */}
+                        <header className="h-16 border-b border-slate-800 glass-panel flex items-center justify-between px-6 sticky top-0 z-50">
+                            <div className="flex items-center space-x-4">
+                                <h2 className="text-lg font-bold text-slate-100 capitalize">{activeTab.replace('-', ' ')}</h2>
+                            </div>
+                            <div className="flex items-center space-x-4">
+                                <div className="flex items-center space-x-2 px-3 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs font-bold">
+                                    <i data-lucide="flame" className="w-4 h-4 text-amber-500"></i>
+                                    <span>{user.streak} Day Streak</span>
+                                </div>
+                                <div className="flex items-center space-x-2 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-bold">
+                                    <i data-lucide="zap" className="w-4 h-4"></i>
+                                    <span>{user.xp} XP (Lvl {user.level})</span>
+                                </div>
+                            </div>
+                        </header>
+
+                        {/* Content Switcher */}
+                        <div className="p-6 max-w-7xl mx-auto w-full">
+                            {activeTab === 'home' && <HomeDashboard setActiveTab={setActiveTab} user={user} />}
+                            {activeTab === 'play' && <PlayModule />}
+                            {activeTab === 'puzzles' && <PuzzlesModule />}
+                            {activeTab === 'analysis' && <AnalysisLabModule />}
+                            {activeTab === 'learn' && <LearnModule />}
+                            {activeTab === 'tournaments' && <TournamentsModule />}
+                            {activeTab === 'leaderboards' && <LeaderboardsModule />}
+                            {activeTab === 'friends' && <FriendsModule />}
+                            {activeTab === 'profile' && <ProfileModule user={user} />}
+                            {activeTab === 'admin' && <AdminModule />}
+                            {activeTab === 'settings' && <SettingsModule theme={theme} setTheme={setTheme} />}
+                        </div>
+                    </main>
+                </div>
+            );
+        }
+
+        // --- MODULE 1: HOME DASHBOARD ---
+        function HomeDashboard({ setActiveTab, user }) {
+            useEffect(() => { lucide.createIcons(); }, []);
+            return (
+                <div className="space-y-6">
+                    <div className="rounded-2xl bg-gradient-to-r from-emerald-600/20 via-teal-600/10 to-transparent p-8 border border-emerald-500/20 glass-panel relative overflow-hidden">
+                        <div className="relative z-10">
+                            <span className="px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-400 text-xs font-bold uppercase tracking-wider">Welcome Back</span>
+                            <h1 className="text-3xl font-extrabold text-white mt-2">Ready for your next masterclass game, {user.name}?</h1>
+                            <p className="text-slate-400 mt-1 max-w-xl">Your current Glicko-2 rating is <strong className="text-emerald-400">{user.rating} ELO</strong>. Jump into a rapid match or solve today's tactical puzzle.</p>
+                            <div className="mt-6 flex space-x-4">
+                                <button onClick={() => setActiveTab('play')} className="px-6 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 font-bold text-white shadow-lg shadow-emerald-600/30 transition flex items-center space-x-2">
+                                    <i data-lucide="play" className="w-5 h-5"></i>
+                                    <span>Play Online Now</span>
+                                </button>
+                                <button onClick={() => setActiveTab('puzzles')} className="px-6 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 font-bold text-slate-200 border border-slate-700 transition flex items-center space-x-2">
+                                    <i data-lucide="puzzle" className="w-5 h-5"></i>
+                                    <span>Solve Daily Puzzle</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div className="glass-panel p-6 rounded-2xl border border-slate-800">
+                            <h3 className="text-sm font-semibold text-slate-400 mb-4 flex items-center justify-between">
+                                <span>Rating Performance</span>
+                                <i data-lucide="trending-up" className="w-4 h-4 text-emerald-400"></i>
+                            </h3>
+                            <div className="flex items-baseline space-x-2">
+                                <span className="text-3xl font-extrabold text-white">2,145</span>
+                                <span className="text-xs text-emerald-400 font-bold">+24 this week</span>
+                            </div>
+                            <div className="mt-4 h-24 flex items-end space-x-2">
+                                {[40, 60, 55, 70, 65, 85, 90].map((h, i) => (
+                                    <div key={i} className="flex-1 bg-emerald-500/20 hover:bg-emerald-500 rounded-t transition" style={{ height: `${h}%` }}></div>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div className="glass-panel p-6 rounded-2xl border border-slate-800">
+                            <h3 className="text-sm font-semibold text-slate-400 mb-4 flex items-center justify-between">
+                                <span>Daily Puzzle Streak</span>
+                                <i data-lucide="flame" className="w-4 h-4 text-amber-400"></i>
+                            </h3>
+                            <div className="text-center py-4">
+                                <div className="text-4xl font-extrabold text-amber-400">14 Days</div>
+                                <p className="text-xs text-slate-400 mt-1">Personal Best: 28 Days</p>
+                            </div>
+                            <button onClick={() => setActiveTab('puzzles')} className="w-full mt-2 py-2.5 rounded-xl bg-amber-500/10 text-amber-400 font-bold text-sm border border-amber-500/20 hover:bg-amber-500/20 transition">
+                                Continue Puzzle Streak
+                            </button>
+                        </div>
+
+                        <div className="glass-panel p-6 rounded-2xl border border-slate-800">
+                            <h3 className="text-sm font-semibold text-slate-400 mb-4 flex items-center justify-between">
+                                <span>Online Friends</span>
+                                <i data-lucide="users" className="w-4 h-4 text-teal-400"></i>
+                            </h3>
+                            <div className="space-y-3">
+                                {['MagnusC', 'HikaruN', 'GothamChess'].map((friend, idx) => (
+                                    <div key={idx} className="flex items-center justify-between">
+                                        <div className="flex items-center space-x-3">
+                                            <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center font-bold text-xs">{friend[0]}</div>
+                                            <span className="text-sm font-medium text-slate-200">{friend}</span>
+                                        </div>
+                                        <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        // --- MODULE 2: PLAY CHESS ---
+        function PlayModule() {
+            const [gameMode, setGameMode] = useState('menu');
+            const [timeControl, setTimeControl] = useState('5+0');
+            const [aiDifficulty, AIDifficulty] = useState('Intermediate');
+            const [evalScore, setEvalScore] = useState('+0.4');
+
+            useEffect(() => { lucide.createIcons(); }, [gameMode]);
+
+            if (gameMode === 'menu') {
+                return (
+                    <div className="space-y-6">
+                        <div className="text-center max-w-2xl mx-auto mb-8">
+                            <h2 className="text-3xl font-extrabold text-white">Choose Your Battle</h2>
+                            <p className="text-slate-400 mt-2">Play against real opponents worldwide, challenge Stockfish AI, or face friends in private rooms.</p>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div onClick={() => setGameMode('online')} className="glass-panel p-6 rounded-2xl border border-slate-800 hover:border-emerald-500/50 cursor-pointer transition group">
+                                <div className="w-12 h-12 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center mb-4 group-hover:scale-110 transition">
+                                    <i data-lucide="globe" className="w-6 h-6"></i>
+                                </div>
+                                <h3 className="text-lg font-bold text-white">Play Online</h3>
+                                <p className="text-slate-400 text-sm mt-1">Instant matchmaking with players worldwide across Bullet, Blitz, and Rapid.</p>
+                            </div>
+
+                            <div onClick={() => setGameMode('computer')} className="glass-panel p-6 rounded-2xl border border-slate-800 hover:border-teal-500/50 cursor-pointer transition group">
+                                <div className="w-12 h-12 rounded-xl bg-teal-500/10 text-teal-400 flex items-center justify-center mb-4 group-hover:scale-110 transition">
+                                    <i data-lucide="cpu" className="w-6 h-6"></i>
+                                </div>
+                                <h3 className="text-lg font-bold text-white">Play Computer</h3>
+                                <p className="text-slate-400 text-sm mt-1">Challenge Stockfish AI across 9 difficulty tiers and 5 unique personalities.</p>
+                            </div>
+
+                            <div onClick={() => setGameMode('friend')} className="glass-panel p-6 rounded-2xl border border-slate-800 hover:border-purple-500/50 cursor-pointer transition group">
+                                <div className="w-12 h-12 rounded-xl bg-purple-500/10 text-purple-400 flex items-center justify-center mb-4 group-hover:scale-110 transition">
+                                    <i data-lucide="user-plus" className="w-6 h-6"></i>
+                                </div>
+                                <h3 className="text-lg font-bold text-white">Play a Friend</h3>
+                                <p className="text-slate-400 text-sm mt-1">Create a private game room and share the invite link instantly.</p>
+                            </div>
+                        </div>
+                    </div>
+                );
+            }
+
+            return (
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    {/* Chessboard Area */}
+                    <div className="lg:col-span-2 glass-panel p-6 rounded-2xl border border-slate-800 flex flex-col items-center">
+                        <div className="w-full flex justify-between items-center mb-4">
+                            <div className="flex items-center space-x-3">
+                                <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center font-bold">AI</div>
+                                <div>
+                                    <h4 className="text-sm font-bold text-slate-200">Stockfish 16 (Grandmaster)</h4>
+                                    <p className="text-xs text-slate-400">Rating: 3200 ELO</p>
+                                </div>
+                            </div>
+                            <div className="text-lg font-mono font-bold px-4 py-1.5 rounded-lg bg-slate-900 text-emerald-400 border border-slate-800">
+                                04:58
+                            </div>
+                        </div>
+
+                        {/* Visual Chessboard Simulation */}
+                        <div className="w-96 h-96 bg-slate-900 rounded-xl border-4 border-slate-800 grid grid-cols-8 grid-rows-8 shadow-2xl relative overflow-hidden">
+                            {Array.from({ length: 64 }).map((_, i) => {
+                                const row = Math.floor(i / 8);
+                                const col = i % 8;
+                                const isLight = (row + col) % 2 === 0;
+                                return (
+                                    <div key={i} className={`${isLight ? 'bg-slate-300' : 'bg-slate-700'} flex items-center justify-center text-xs font-bold text-slate-900`}>
+                                        {row === 6 && col === 4 ? '♟' : ''}
+                                        {row === 1 && col === 4 ? '♙' : ''}
+                                    </div>
+                                );
+                            })}
+                        </div>
+
+                        <div className="w-full flex justify-between items-center mt-4">
+                            <div className="flex items-center space-x-3">
+                                <div className="w-8 h-8 rounded-full bg-emerald-600 flex items-center justify-center font-bold text-white">BG</div>
+                                <div>
+                                    <h4 className="text-sm font-bold text-slate-200">Grandmaster Bijay</h4>
+                                    <p className="text-xs text-emerald-400">Rating: 2145 ELO</p>
+                                </div>
+                            </div>
+                            <div className="text-lg font-mono font-bold px-4 py-1.5 rounded-lg bg-slate-900 text-emerald-400 border border-slate-800">
+                                05:00
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Game Control & Evaluation Sidebar */}
+                    <div className="glass-panel p-6 rounded-2xl border border-slate-800 flex flex-col justify-between">
+                        <div>
+                            <div className="flex items-center justify-between mb-4">
+                                <h3 className="font-bold text-slate-200">Game Analysis & Eval</h3>
+                                <button onClick={() => setGameMode('menu')} className="text-xs text-slate-400 hover:text-white">Exit Game</button>
+                            </div>
+                            <div className="p-4 rounded-xl bg-slate-900 border border-slate-800 mb-4">
+                                <div className="text-xs text-slate-400">Stockfish Evaluation</div>
+                                <div className="text-2xl font-extrabold text-emerald-400 mt-1">{evalScore}</div>
+                                <p className="text-xs text-slate-400 mt-2">Depth 22/42 • Principal Variation: e4 e5 Nf3 Nc6</p>
+                            </div>
+                            <div className="space-y-2">
+                                {['1. e4 e5', '2. Nf3 Nc6', '3. Bc4 Bc5'].map((move, idx) => (
+                                    <div key={idx} className="flex justify-between text-sm py-1 px-3 rounded bg-slate-900/50">
+                                        <span className="text-slate-400">{idx + 1}.</span>
+                                        <span className="text-slate-200 font-mono">{move}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                        <div className="space-y-3 mt-6">
+                            <button className="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 font-bold text-white shadow-lg transition">Offer Draw</button>
+                            <button className="w-full py-3 rounded-xl bg-rose-600/20 hover:bg-rose-600/30 text-rose-400 font-bold border border-rose-500/30 transition">Resign</button>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        // --- MODULE 3: PUZZLES ---
+        function PuzzlesModule() {
+            useEffect(() => { lucide.createIcons(); }, []);
+            return (
+                <div className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div className="glass-panel p-6 rounded-2xl border border-slate-800">
+                            <h3 className="text-lg font-bold text-white mb-2">Puzzle Rush</h3>
+                            <p className="text-slate-400 text-sm mb-4">Solve as many tactical puzzles as you can before the 3-minute timer runs out!</p>
+                            <button className="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 font-bold text-white shadow transition">Start Puzzle Rush</button>
+                        </div>
+                        <div className="glass-panel p-6 rounded-2xl border border-slate-800">
+                            <h3 className="text-lg font-bold text-white mb-2">Puzzle Survival</h3>
+                            <p className="text-slate-400 text-sm mb-4">Endless puzzle stream with increasing difficulty. 3 strikes and you're out.</p>
+                            <button className="w-full py-3 rounded-xl bg-teal-600 hover:bg-teal-500 font-bold text-white shadow transition">Start Survival</button>
+                        </div>
+                        <div className="glass-panel p-6 rounded-2xl border border-slate-800">
+                            <h3 className="text-lg font-bold text-white mb-2">Targeted Weaknesses</h3>
+                            <p className="text-slate-400 text-sm mb-4">AI-powered training targeting your recent tactical mistakes (Pins & Forks).</p>
+                            <button className="w-full py-3 rounded-xl bg-purple-600 hover:bg-purple-500 font-bold text-white shadow transition">Train Weaknesses</button>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        // --- MODULE 4: ANALYSIS LAB ---
+        function AnalysisLabModule() {
+            useEffect(() => { lucide.createIcons(); }, []);
+            return (
+                <div className="glass-panel p-6 rounded-2xl border border-slate-800">
+                    <h2 className="text-2xl font-bold text-white mb-4">Chess Analysis Lab</h2>
+                    <p className="text-slate-400 mb-6">Import PGN games or paste FEN positions for deep Stockfish 16 game review and move classification.</p>
+                    <div className="flex space-x-4">
+                        <input type="text" placeholder="Paste PGN or FEN string here..." className="flex-1 px-4 py-3 rounded-xl bg-slate-900 border border-slate-800 text-slate-200 focus:outline-none focus:border-emerald-500" />
+                        <button className="px-6 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 font-bold text-white shadow transition">Run Full Review</button>
+                    </div>
+                </div>
+            );
+        }
+
+        // --- MODULE 5: CHESS ACADEMY ---
+        function LearnModule() {
+            useEffect(() => { lucide.createIcons(); }, []);
+            return (
+                <div className="space-y-6">
+                    <h2 className="text-2xl font-bold text-white">Chess Academy Curricula</h2>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {[
+                            { title: 'Absolute Beginners', level: 'Level 1', lessons: 12 },
+                            { title: 'Opening Principles & Traps', level: 'Level 3', lessons: 18 },
+                            { title: 'Advanced Tactical Patterns', level: 'Level 5', lessons: 24 },
+                            { title: 'Endgame Mastery', level: 'Level 8', lessons: 30 }
+                        ].map((course, idx) => (
+                            <div key={idx} className="glass-panel p-6 rounded-2xl border border-slate-800 flex justify-between items-center">
+                                <div>
+                                    <span className="text-xs font-bold text-emerald-400 uppercase tracking-wider">{course.level}</span>
+                                    <h3 className="text-lg font-bold text-white mt-1">{course.title}</h3>
+                                    <p className="text-slate-400 text-sm mt-1">{course.lessons} Interactive Lessons</p>
+                                </div>
+                                <button className="px-4 py-2 rounded-xl bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 font-bold text-sm border border-emerald-500/30 transition">Start Course</button>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            );
+        }
+
+        // --- MODULE 6: TOURNAMENTS ---
+        function TournamentsModule() {
+            useEffect(() => { lucide.createIcons(); }, []);
+            return (
+                <div className="space-y-6">
+                    <h2 className="text-2xl font-bold text-white">Live Tournaments & Arenas</h2>
+                    <div className="glass-panel p-6 rounded-2xl border border-slate-800">
+                        <div className="flex justify-between items-center mb-4">
+                            <div>
+                                <h3 className="text-lg font-bold text-white">Bullet Arena Championship (3+0)</h3>
+                                <p className="text-slate-400 text-sm">Starts in 14 minutes • 342 players registered</p>
+                            </div>
+                            <button className="px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 font-bold text-white shadow transition">Join Arena</button>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        // --- MODULE 7: LEADERBOARDS ---
+        function LeaderboardsModule() {
+            useEffect(() => { lucide.createIcons(); }, []);
+            return (
+                <div className="glass-panel p-6 rounded-2xl border border-slate-800">
+                    <h2 className="text-2xl font-bold text-white mb-6">Global Leaderboards</h2>
+                    <div className="space-y-4">
+                        {['Magnus Carlsen', 'Hikaru Nakamura', 'Grandmaster Bijay', 'Alireza Firouzja'].map((player, idx) => (
+                            <div key={idx} className="flex items-center justify-between p-4 rounded-xl bg-slate-900 border border-slate-800">
+                                <div className="flex items-center space-x-4">
+                                    <span className="font-extrabold text-emerald-400 text-lg">#{idx + 1}</span>
+                                    <span className="font-bold text-white">{player}</span>
+                                </div>
+                                <span className="font-mono font-bold text-slate-300">{2900 - idx * 45} ELO</span>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            );
+        }
+
+        // --- MODULE 8: FRIENDS & SOCIAL ---
+        function FriendsModule() {
+            useEffect(() => { lucide.createIcons(); }, []);
+            return (
+                <div className="glass-panel p-6 rounded-2xl border border-slate-800">
+                    <h2 className="text-2xl font-bold text-white mb-4">Friends & Social System</h2>
+                    <p className="text-slate-400 mb-6">Connect with fellow chess players, challenge friends, and observe live match watch parties.</p>
+                    <div className="flex space-x-4">
+                        <input type="text" placeholder="Search username to add friend..." className="flex-1 px-4 py-3 rounded-xl bg-slate-900 border border-slate-800 text-slate-200 focus:outline-none focus:border-emerald-500" />
+                        <button className="px-6 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 font-bold text-white shadow transition">Add Friend</button>
+                    </div>
+                </div>
+            );
+        }
+
+        // --- MODULE 9: PROFILE ---
+        function ProfileModule({ user }) {
+            useEffect(() => { lucide.createIcons(); }, []);
+            return (
+                <div className="glass-panel p-8 rounded-2xl border border-slate-800">
+                    <div className="flex items-center space-x-6">
+                        <div className="w-20 h-20 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 flex items-center justify-center font-bold text-3xl text-white shadow-xl">
+                            {user.name.charAt(0)}
+                        </div>
+                        <div>
+                            <h2 className="text-2xl font-extrabold text-white">{user.name}</h2>
+                            <p className="text-emerald-400 font-semibold">{user.title} • {user.rating} ELO</p>
+                            <p className="text-slate-400 text-sm mt-1">Member since 2025 • Premium Subscriber</p>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        // --- MODULE 10: ADMIN CONSOLE ---
+        function AdminModule() {
+            useEffect(() => { lucide.createIcons(); }, []);
+            return (
+                <div className="space-y-6">
+                    <h2 className="text-2xl font-bold text-white">Admin Control Dashboard</h2>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div className="glass-panel p-6 rounded-2xl border border-slate-800">
+                            <h3 className="text-sm font-semibold text-slate-400 mb-2">Active Users</h3>
+                            <div className="text-3xl font-extrabold text-white">24,850</div>
+                        </div>
+                        <div className="glass-panel p-6 rounded-2xl border border-slate-800">
+                            <h3 className="text-sm font-semibold text-slate-400 mb-2">Active Games</h3>
+                            <div className="text-3xl font-extrabold text-white">4,120</div>
+                        </div>
+                        <div className="glass-panel p-6 rounded-2xl border border-slate-800">
+                            <h3 className="text-sm font-semibold text-slate-400 mb-2">Monthly Revenue (MRR)</h3>
+                            <div className="text-3xl font-extrabold text-emerald-400">$48,250</div>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        // --- MODULE 11: SETTINGS ---
+        function SettingsModule({ theme, setTheme }) {
+            useEffect(() => { lucide.createIcons(); }, []);
+            return (
+                <div className="glass-panel p-8 rounded-2xl border border-slate-800 space-y-6">
+                    <h2 className="text-2xl font-bold text-white">Platform Settings</h2>
+                    <div className="flex items-center justify-between py-4 border-b border-slate-800">
+                        <div>
+                            <h4 className="font-bold text-slate-200">Interface Theme</h4>
+                            <p className="text-slate-400 text-sm">Switch between dark mode and light mode.</p>
+                        </div>
+                        <button onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} className="px-4 py-2 rounded-xl bg-slate-800 text-slate-200 font-bold border border-slate-700">
+                            {theme === 'dark' ? 'Dark Mode' : 'Light Mode'}
+                        </button>
+                    </div>
+                </div>
+            );
+        }
+
+        ReactDOM.render(<ChessverseApp />, document.getElementById('root'));
+    </script>
+</body>
+</html>
